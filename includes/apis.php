@@ -1,0 +1,290 @@
+<?php
+require_once dirname(__DIR__) . '/proxy/config.php';
+require_once __DIR__ . '/cms-image-alt.php';
+$api_url = "https://dps.allenhouseschools.com";
+
+/** Match gallery/achievement branch id used by `/api/galleries/branch/{id}/year/{year}`. */
+if (!defined('DPS_SAHARANPUR_GALLERY_BRANCH_ID')) {
+    define('DPS_SAHARANPUR_GALLERY_BRANCH_ID', DPS_SAHARANPUR_BRANCH_ID);
+}
+
+function fetchMultipleApiData($endpoints)
+{
+    $baseUrl = "https://dps.allenhouseschools.com/api";
+    $mh = curl_multi_init();
+    $curlHandles = [];
+    $responses = [];
+    // Create all curl handles
+    foreach ($endpoints as $key => $endpoint) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $baseUrl . $endpoint);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // disable SSL check if needed
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, api_auth_headers());
+        curl_multi_add_handle($mh, $ch);
+        $curlHandles[$key] = $ch;
+    }
+    $running = null;
+    do {
+        $status = curl_multi_exec($mh, $running);
+
+        if ($status > CURLM_OK) {
+             break;
+        }
+        curl_multi_select($mh);
+        usleep(10000);
+    } while ($running > 0);
+
+    // Collect responses
+    foreach ($curlHandles as $key => $ch) {
+        $content = curl_multi_getcontent($ch);
+        $responses[$key] = json_decode($content, true);
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+    }
+    curl_multi_close($mh);
+    return $responses;
+}
+$endpoints = [
+    'home_data'   => '/pages/home-page-saharanpur',
+    'menu_data'   => '/menus/10',
+    'flyer_data'   => '/flyers/branch/7',
+    'header_footer_data' => '/public/branches/7/layout-parts/',
+    'scroll_text_data' => '/scrolling-texts/branch/7',
+    'statistic_data' => '/statistics/branch/7',
+    'excellence_data' => '/pages/excellence-in-action-page-saharanpur',
+    'celebrating_data' => '/pages/celebrating-excellence-page-saharanpur',
+    'spotlight_data' => '/pages/excellence-in-the-spotlight-page-saharanpur',
+    'embark_data' => '/pages/embark-on-a-journey-of-excellence-page-saharanpur',
+    'mv_data' => '/pages/mission-vision-and-core-values-page-saharanpur',
+    'our_motto_data' => '/pages/our-motto-page-saharanpur',
+    'DPS_saharanpur_data' => '/pages/dps-saharanpur-page-saharanpur',
+    'DPS_society_data' => '/pages/dps-society-page-saharanpur',
+    'Chairman_message_data' => '/pages/chairmans-message-page-saharanpur',
+    'principal_message_data' => '/pages/principals-message-page-saharanpur',
+    'mc_data' => '/pages/management-committee-page-saharanpur',
+    'senior_wing_faculty_data' => '/pages/form-senior-wing-faculty-page-saharanpur',
+    'middle_wing_faculty_data' => '/pages/middle-wing-faculty-page-saharanpur',
+    'PW_faculty_data' => '/pages/preparatory-wing-faculty-page-saharanpur',
+    'foundational_wing_faculty_data' => '/pages/foundational-wing-faculty-page-saharanpur',
+    'phfd_data' => '/pages/physical-health-fitness-development-page-saharanpur',
+    'music_dance_depart_data' => '/pages/music-dance-department-page-saharanpur',
+    'school_guidelines_data' => '/pages/school-guidelines-page-saharanpur', 
+    'overview_data' => '/pages/overview-page-saharanpur',
+    'foundational_stage_data' => '/pages/foundational-stage-page-saharanpur',
+    'secondary_stage_data' => '/pages/secondary-stage-page-saharanpur',
+    'sr_secondary_stage_data' => '/pages/sr-secondary-stage-page-saharanpur',
+    'rr_data' => '/pages/rules-and-regulations-page-saharanpur',
+    'school_timing_data' => '/pages/school-timings-page-saharanpur',
+    'discipline_rule_data' => '/pages/discipline-rules-page-saharanpur',
+    'CBSE_details_data' => '/pages/cbse-details-page-saharanpur',
+    'view_tc_data' => '/pages/view-tc-page-saharanpur',
+    'school_uniform_data' => '/pages/school-uniform-page-saharanpur',
+    'transport_rules_data' => '/pages/transport-rules-page-saharanpur',
+    'parents_expected_data' => '/pages/parents-expected-to-page-saharanpur',
+    'leave_data' => '/pages/leave-page-saharanpur',
+    'withdrawal_rules_data' => '/pages/withdrawal-rules-page-saharanpur',
+    'admission_procedure_data' => '/pages/admission-procedure-page-saharanpur',
+    'health_and_pf_data' => '/pages/health-and-physical-fitness-page-saharanpur',
+    'DE_program_data' => '/pages/domestic-exchange-program-page-saharanpur',
+    'DO_data' => '/pages/domestic-outbounds-page-saharanpur',
+    'IE_program_data' => '/pages/international-exchange-program-page-saharanpur',
+    'IO_data' => '/pages/international-outbounds-page-saharanpur',
+    'animation_data' => '/pages/animation-page-saharanpur',
+    'coding_data' => '/pages/coding-page-saharanpur',
+    'robotics_data' => '/pages/robotics-page-saharanpur',
+    'oluxi_smart_skill_data' => '/pages/oluxi-smart-skill-page-saharanpur',
+    'financial_literacy_data' => '/pages/financial-literacy-page-saharanpur',
+    'nws_academy_data' => '/pages/north-west-sports-academy-page-saharanpur',
+    'house_system_data' => '/pages/house-system-page-saharanpur',
+    'council_clubs_data' => '/pages/council-clubs-page-saharanpur',
+    'counselling_cell_data' => '/pages/counselling-cell-page-saharanpur',
+    'PE_program_data' => '/pages/peer-education-program-page-saharanpur',
+    'sk_data' => '/pages/shiksha-kendra-page-saharanpur',
+    'sewa_data' => '/pages/sewa-page-saharanpur',
+    'cg_and_cp_data' => '/pages/career-guidance-and-counselling-program-page-section',
+    'library_data' => '/pages/library-page-saharanpur',
+    'admission_overview_data' => '/pages/admission-overview-page-saharanpur',
+    'fee_structure_data' => '/pages/fee-structure-page-saharanpur',
+    'withdrawal_policy_data' => '/pages/withdrawal-policy-page-saharanpur',
+    'online_enquiry' => '/pages/online-enquiry-form-page-saharanpur',
+    'tc_guideline_data' => '/pages/transfer-certificate-guidelines-page-saharanpur',
+    'gt_policy_data' => '/pages/group-transfer-policy-page-saharanpur',
+    'bus_route_data' => '/pages/bus-route-page-saharanpur',
+    'academic_achievements_data' => '/pages/academic-achievements-page-saharanpur',
+    'EC_achievements_data' => '/pages/extra-curricular-achievements-page-saharanpur',
+    'SA_achievements_data' => '/pages/sports-academy-achivements-page-saharanpur',
+    'AP_achievements_data' => '/pages/alumni-placement-achievements-page-saharanpur',
+    'school_awards_data' => '/pages/school-awards-page-saharanpur',
+    'principal_awards_data' => '/pages/principal-awards-page-saharanpur',
+    'sf_data' => '/pages/school-faculty-page-saharanpur',
+    'media_data' => '/pages/media-page-saharanpur',
+    'newsletter_data' => '/pages/newsletter-page-saharanpur',
+    'DPS_news_data' => '/pages/dps-in-news-page-saharanpur',
+    'our_curriculum_data' => '/pages/our-curriculum-page-saharanpur',
+    'our_story_data' => '/pages/our-story-page-saharanpur',
+    'facilities_data' => '/pages/facilities-page-saharanpur',
+    'print_media_data' => '/pages/print-media-page-saharanpur',
+    'video_gallery_data' => '/pages/video-gallery-page-saharanpur',
+    'other_info_data' => '/pages/other-information-page-saharanpur',
+    'parent_teacher_association_data' => '/pages/other-information-page-saharanpur',
+    'SHC_data' => '/pages/sexual-harassment-committee-page-saharanpur',
+    'teacher_detail_data' => '/pages/teachers-detail-page-saharanpur',
+    'emp_list_data' => '/pages/employee-list-page-saharanpur',
+    'LT_data' => '/pages/leadership-team-page-saharanpur',
+    'GI_data' => '/pages/general-information-page-saharanpur',
+    'doc_and_info_data' => '/pages/documents-and-information-page-saharanpur',
+    'result_academic_data' => '/pages/results-and-academics-page-saharanpur',
+    'staff_data' => '/pages/staff-teaching-page-saharanpur',
+    'school_infra_data' => '/pages/school-infrastructure-page-saharanpur',
+    'DPSS_human_resource_data' => '/pages/dpss-human-resource-development-council-page-saharanpur',
+    'CBSE_data' => '/pages/cbse-page-saharanpur',
+    'superhouse_edu_data' => '/pages/superhouse-education-page-sahranpur',
+    'debriefing_sessions_data' => '/pages/debriefing-sessions-page-saharanpur',
+    'AB_committee_data' => '/pages/anti-bullying-committee-page-saharanpur',
+    'discipline_committee_data' => '/pages/discipline-committee-page-saharanpur',
+    'safety_and_security_data' => '/pages/safety-and-security-page-saharanpur',
+    'POSH_data' => '/pages/posh-page-saharanpur',
+    'pocso_data' => '/pages/pocso-page-saharanpur',
+    'faq_data' => '/pages/faqs-page-saharanpur',
+    'testimonial_data' => '/pages/testimonials-page-saharanpur',
+    'sports_data' => '/pages/sports-page-saharanpur',
+    'taal_tarang_data' => '/pages/taal-tarang-tasveer-page-saharanpur',
+    'indoor_gym_data' => '/pages/indoor-gym-page-saharanpur',
+    'RIVERA_data' => '/pages/rivera-page-saharanpur',
+    'lsd_data' => '/pages/language-skill-development-page-saharanpur',
+    'photo_gallery_data' => '/galleries/type/gallery/branch/7',
+    'achievement_data' => '/galleries/type/achievements/branch/7',
+    'process_____data' => '/accordions/branch/7/filter/id?id=16',
+    'footer_link_data' => '/public/link-groups/position/footer/hierarchical?branch_id=7',
+    'contact' => '/pages/contact-us-page-saharanpur',
+    'jobs_data' => '/jobs/branch/7',
+    'process_data' => '/pages/process-page-saharanpur',
+     'bus_routes_data' => '/pages/bus-route-page-saharanpur',
+    'route_data' => '/get-bus-routes/7',
+    'blogData' => '/blogs/branch/7',
+      'terms_and_conditions' => '/pages/terms-and-conditions-page-saharanpur'
+  ];
+
+$data = fetchMultipleApiData($endpoints);
+
+$home_data   = $data['home_data'];
+$menu_data = $data['menu_data'];
+$flyer_data = $data['flyer_data'];
+$header_footer_data = $data['header_footer_data'];
+$scroll_text_data = $data['scroll_text_data'];
+$excellence_data   = $data['excellence_data'];
+$celebrating_data   = $data['celebrating_data'];
+$spotlight_data   = $data['spotlight_data'];
+$embark_data   = $data['embark_data'];
+$statistic_data = $data['statistic_data'];
+$mv_data   = $data['mv_data'];
+$our_motto_data = $data['our_motto_data'];
+$DPS_saharanpur_data = $data['DPS_saharanpur_data'];
+$DPS_society_data = $data['DPS_society_data'];
+$Chairman_message_data = $data['Chairman_message_data'];
+$principal_message_data = $data['principal_message_data'];
+$mc_data = $data['mc_data'];
+$senior_wing_faculty_data = $data['senior_wing_faculty_data'];
+$middle_wing_faculty_data = $data['middle_wing_faculty_data'];
+$PW_faculty_data = $data['PW_faculty_data'];
+$foundational_wing_faculty_data = $data['foundational_wing_faculty_data'];
+$phfd_data = $data['phfd_data'];
+$music_dance_depart_data = $data['music_dance_depart_data'];
+$school_guidelines_data = $data['school_guidelines_data'];
+$overview_data = $data['overview_data'];
+$foundational_stage_data = $data['foundational_stage_data'];
+$secondary_stage_data = $data['secondary_stage_data'];
+$sr_secondary_stage_data = $data['sr_secondary_stage_data'];
+$rr_data = $data['rr_data'];
+$school_timing_data = $data['school_timing_data'];
+$discipline_rule_data = $data['discipline_rule_data'];
+$CBSE_details_data = $data['CBSE_details_data'];
+$view_tc_data = $data['view_tc_data'];
+$school_uniform_data = $data['school_uniform_data'];
+$transport_rules_data = $data['transport_rules_data'];
+$parents_expected_data = $data['parents_expected_data'];
+$leave_data = $data['leave_data'];
+$withdrawal_rules_data = $data['withdrawal_rules_data'];
+$admission_procedure_data = $data['admission_procedure_data'];
+$health_and_pf_data = $data['health_and_pf_data'];
+$DE_program_data = $data['DE_program_data'];
+$DO_data = $data['DO_data'];
+$IE_program_data = $data['IE_program_data'];
+$IO_data = $data['IO_data'];
+$animation_data = $data['animation_data'];
+$coding_data = $data['coding_data'];
+$robotics_data = $data['robotics_data'];
+$oluxi_smart_skill_data = $data['oluxi_smart_skill_data'];
+$financial_literacy_data = $data['financial_literacy_data'];
+$nws_academy_data = $data['nws_academy_data'];
+$house_system_data = $data['house_system_data'];
+$council_clubs_data = $data['council_clubs_data'];
+$counselling_cell_data = $data['counselling_cell_data'];
+$PE_program_data = $data['PE_program_data'];
+$sk_data = $data['sk_data'];
+$sewa_data = $data['sewa_data'];
+$cg_and_cp_data = $data['cg_and_cp_data'];
+$library_data = $data['library_data'];
+$admission_overview_data = $data['admission_overview_data'];
+$online_enquiry = $data['online_enquiry'];
+$fee_structure_data = $data['fee_structure_data'];
+$withdrawal_policy_data = $data['withdrawal_policy_data'];
+$tc_guideline_data = $data['tc_guideline_data'];
+$gt_policy_data = $data['gt_policy_data'];
+$bus_route_data = $data['bus_route_data'];
+$academic_achievements_data = $data['academic_achievements_data'];
+$EC_achievements_data = $data['EC_achievements_data'];
+$SA_achievements_data = $data['SA_achievements_data'];
+$AP_achievements_data = $data['AP_achievements_data'];
+$school_awards_data = $data['school_awards_data'];
+$principal_awards_data = $data['principal_awards_data'];
+$sf_data = $data['sf_data'];
+$media_data = $data['media_data'];
+$newsletter_data = $data['newsletter_data'];
+$DPS_news_data = $data['DPS_news_data'];
+$our_curriculum_data = $data['our_curriculum_data'];
+$our_story_data = $data['our_story_data'];
+$facilities_data = $data['facilities_data'];
+$print_media_data = $data['print_media_data'];
+$video_gallery_data = $data['video_gallery_data'];
+$other_info_data = $data['other_info_data'];
+$parent_teacher_association_data = $data['parent_teacher_association_data'];
+$SHC_data = $data['SHC_data'];
+$teacher_detail_data = $data['teacher_detail_data'];
+$emp_list_data = $data['emp_list_data'];
+$LT_data = $data['LT_data'];
+$GI_data = $data['GI_data'];
+$doc_and_info_data = $data['doc_and_info_data'];
+$result_academic_data = $data['result_academic_data'];
+$staff_data = $data['staff_data'];
+$school_infra_data = $data['school_infra_data'];
+$DPSS_human_resource_data = $data['DPSS_human_resource_data'];
+$CBSE_data = $data['CBSE_data'];
+$superhouse_edu_data = $data['superhouse_edu_data'];
+$debriefing_sessions_data = $data['debriefing_sessions_data'];
+$AB_committee_data = $data['AB_committee_data'];
+$discipline_committee_data = $data['discipline_committee_data'];
+$safety_and_security_data = $data['safety_and_security_data'];
+$POSH_data = $data['POSH_data'];
+$pocso_data = $data['pocso_data'];
+$faq_data = $data['faq_data'];
+$testimonial_data = $data['testimonial_data'];
+$sports_data = $data['sports_data'];
+$taal_tarang_data = $data['taal_tarang_data'];
+$indoor_gym_data = $data['indoor_gym_data'];
+$RIVERA_data = $data['RIVERA_data'];
+$lsd_data = $data['lsd_data'];
+$photo_gallery_data = $data['photo_gallery_data'];
+$achievement_data = $data['achievement_data'];
+$process_data   = $data['process_data'];
+$footer_link_data = $data['footer_link_data'];
+$contact = $data['contact'];
+$jobs_data = $data['jobs_data'];
+$process_____data = $data['process_____data'];
+$bus_routes_data = $data['bus_routes_data'];
+$route_data = $data['route_data'];
+$blogData = $data['blogData'];
+$terms_and_conditions = $data['terms_and_conditions'];
+?>
