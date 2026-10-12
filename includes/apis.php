@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/proxy/config.php';
 require_once __DIR__ . '/cms-image-alt.php';
+require_once __DIR__ . '/api-cache.php';
 $api_url = "https://dps.allenhouseschools.com";
 
 /** Match gallery/achievement branch id used by `/api/galleries/branch/{id}/year/{year}`. */
@@ -8,43 +9,11 @@ if (!defined('DPS_SAHARANPUR_GALLERY_BRANCH_ID')) {
     define('DPS_SAHARANPUR_GALLERY_BRANCH_ID', DPS_SAHARANPUR_BRANCH_ID);
 }
 
-function fetchMultipleApiData($endpoints)
-{
-    $baseUrl = "https://dps.allenhouseschools.com/api";
-    $mh = curl_multi_init();
-    $curlHandles = [];
-    $responses = [];
-    // Create all curl handles
-    foreach ($endpoints as $key => $endpoint) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $baseUrl . $endpoint);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // disable SSL check if needed
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, api_auth_headers());
-        curl_multi_add_handle($mh, $ch);
-        $curlHandles[$key] = $ch;
+if (!function_exists('fetchMultipleApiData')) {
+    function fetchMultipleApiData($endpoints)
+    {
+        return dps_api_fetch_multi($endpoints);
     }
-    $running = null;
-    do {
-        $status = curl_multi_exec($mh, $running);
-
-        if ($status > CURLM_OK) {
-             break;
-        }
-        curl_multi_select($mh);
-        usleep(10000);
-    } while ($running > 0);
-
-    // Collect responses
-    foreach ($curlHandles as $key => $ch) {
-        $content = curl_multi_getcontent($ch);
-        $responses[$key] = json_decode($content, true);
-        curl_multi_remove_handle($mh, $ch);
-        curl_close($ch);
-    }
-    curl_multi_close($mh);
-    return $responses;
 }
 $endpoints = [
     'home_data'   => '/pages/home-page-saharanpur',
@@ -167,7 +136,9 @@ $endpoints = [
       'terms_and_conditions' => '/pages/terms-and-conditions-page-saharanpur'
   ];
 
-$data = fetchMultipleApiData($endpoints);
+$forceRefresh = defined('DPS_API_FORCE_REFRESH') && DPS_API_FORCE_REFRESH;
+$cacheTtl = defined('DPS_API_CACHE_TTL') ? (int) DPS_API_CACHE_TTL : 60;
+$data = dps_api_cached_fetch($endpoints, __DIR__ . '/cache/apis_cache.json', $cacheTtl, $forceRefresh);
 
 $home_data   = $data['home_data'];
 $menu_data = $data['menu_data'];
