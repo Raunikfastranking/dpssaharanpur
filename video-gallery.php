@@ -6,6 +6,8 @@ if (empty($video_gallery_data['data']['sections'])) {
     $ch = curl_init('https://dps.allenhouseschools.com/api/pages/video-gallery-page-unnao');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_HTTPHEADER => api_auth_headers(),
     ]);

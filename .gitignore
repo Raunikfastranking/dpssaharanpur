@@ -1,0 +1,5 @@
+# Runtime API cache files
+includes/cache/apis_cache.json
+includes/cache/apis_cache.json.lock
+includes/cache/apis_cache.json.tmp
+admissions-open-2026-27/cache/
