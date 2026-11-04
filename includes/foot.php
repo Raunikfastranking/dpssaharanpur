@@ -58,26 +58,26 @@
 
 <script>
   const openPopupBtn = document.getElementById('openPopup');
-  const closePopup = document.getElementById('closePopup');
-  const popupForm = document.getElementById('popupForm');
+  const closePopupBtnEl = document.getElementById('closePopup');
+  const enquiryPopupEl = document.getElementById('popupForm');
 
   if (openPopupBtn) {
     openPopupBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      popupForm.classList.remove('hidden');
+      enquiryPopupEl.classList.remove('hidden');
     });
   }
 
-  if (closePopup) {
-    closePopup.addEventListener('click', () => {
-      popupForm.classList.add('hidden');
+  if (closePopupBtnEl) {
+    closePopupBtnEl.addEventListener('click', () => {
+      enquiryPopupEl.classList.add('hidden');
     });
   }
 
-  if (popupForm) {
-    popupForm.addEventListener('click', (e) => {
-      if (e.target === popupForm) {
-        popupForm.classList.add('hidden');
+  if (enquiryPopupEl) {
+    enquiryPopupEl.addEventListener('click', (e) => {
+      if (e.target === enquiryPopupEl) {
+        enquiryPopupEl.classList.add('hidden');
       }
     });
   }
@@ -133,6 +133,7 @@
   const BASE_URL = "<?= rtrim((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'], '/') ?>";
   document.addEventListener("DOMContentLoaded", function() {
      const enquiryForm = document.getElementById("enquiryForm");
+     if (!enquiryForm) return;
 const estudent_name = document.getElementById("estudent_name");
 const eparent_name = document.getElementById("eparent_name");
 const emobile = document.getElementById("emobile");
@@ -194,6 +195,8 @@ const submitBtn = document.getElementById("submitBtn");
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
+    if (!document.getElementById("enquiryForm")) return;
+
     /* =========================
        CUSTOM CITY DROPDOWN
     ========================== */
