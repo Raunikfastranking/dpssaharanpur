@@ -277,6 +277,10 @@ window.loadEnquiryWidget = function() {
     border-color: #003618 !important;
     color: #fff !important;
 }
+
+body .jquery-modal {
+    z-index: 100001 !important;
+}
 </style>
 
 <div class="bg-blue-main p-2 px-10 lg:flex hidden justify-between items-center text-[12px]">
