@@ -151,13 +151,13 @@ $pageData = $pageDataMap[$currentPage] ?? null; // null if page not found
 </div>
 
 <div id="popupForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[9998]">
-    <div class="bg-white rounded-2xl shadow-2xl w-full relative" style="width:476px; max-width:calc(100vw - 32px); max-height:90vh; overflow-y:auto; padding:12px 22px 18px;">
+    <div class="bg-white rounded-lg shadow-2xl w-full relative" style="width:470px; max-width:calc(100vw - 32px); max-height:90vh; overflow-y:auto; padding:12px 22px 18px;">
         <!-- Close Button -->
         <button type="button" id="closePopup" onclick="closePopup()" class="absolute top-3 right-3 z-10 text-gray-500 hover:text-red-500 text-xl font-bold">
             &times;
         </button>
 
-        <h2 class="text-2xl font-semibold mb-2">Enquiry Form</h2>
+        <h2 class="text-xl font-semibold mb-2">Enquiry Form</h2>
         <div id="ee-form-22-popup"></div>
     </div>
 </div>
@@ -226,30 +226,38 @@ window.loadEnquiryWidget = function() {
 #ee-form-22-popup input:not([type="checkbox"]):not([type="hidden"]):not([type="submit"]),
 #ee-form-22-popup select,
 #ee-form-22-popup textarea {
-    height: 42px !important;
-    min-height: 42px !important;
-    font-size: 18px !important;
-    padding-top: 10px !important;
-    padding-bottom: 8px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    font-size: 15px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
     box-sizing: border-box;
 }
 
 #ee-form-22-popup .select2-container .select2-selection--single {
-    height: 42px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 #ee-form-22-popup .select2-selection--single .select2-selection__rendered {
-    line-height: 40px !important;
-    font-size: 18px !important;
-    padding-top: 2px !important;
+    line-height: normal !important;
+    font-size: 15px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     padding-left: 8px !important;
 }
 
 #ee-form-22-popup .select2-selection--single .select2-selection__arrow {
-    height: 40px !important;
+    height: 34px !important;
 }
 
 #ee-form-22-popup .ee-form-body > .ee-row {
+    width: 100% !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
     margin-bottom: 10px !important;
 }
 
@@ -297,7 +305,7 @@ body .jquery-modal {
 
     <div class=" overflow-hidden sm:w-[60%] ">
         <div>
-            <p class="flex  items-center justify-between animate-slide sm:gap-0 gap-10 text-white">
+            <p class="flex  items-center justify-between animate-slide sm:gap-0 gap-10 text-white whitespace-nowrap">
               <?= $scroll_text_data['data'][0]['content'] ?? "" ?>   
             </p>
         </div>
@@ -438,7 +446,7 @@ body .jquery-modal {
 
     <div class=" overflow-hidden text-[10px] mt-1">
         <div class="w-full">
-            <p class="animate-slide  text-white">
+            <p class="animate-slide  text-white whitespace-nowrap">
                  <?= $scroll_text_data['data'][0]['content'] ?? "" ?>
             </p>
         </div>
