@@ -557,4 +557,14 @@ function renderMenu($items, $isSub = false)
     function closePopup() {
         document.getElementById("popupForm").classList.add("hidden");
     }
+
+    // Close the enquiry form when the widget's thank-you modal appears
+    document.addEventListener("DOMContentLoaded", function () {
+        new MutationObserver(function () {
+            var modal = document.querySelector(".jquery-modal");
+            if (modal && /thank/i.test(modal.textContent)) {
+                closePopup();
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+    });
 </script>
