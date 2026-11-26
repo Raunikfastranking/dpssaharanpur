@@ -915,7 +915,7 @@ include "includes/apis.php";
                 <div class="relative" id="testimonials">
                     <div class="2xl:w-[1280px] lg:w-[1024px] md:w-[767px] sm:w-[640px] sm:mx-auto sm:px-5 mx-3 px-3">
                         <div class="relative  sm:pt-5 pt-2 ">
-                            <div class="Testimonials relative opne-hide-circle">
+                           <div class="Testimonials relative opne-hide-circle">
                                 <div class=" overflow-hidden mt-1" data-glide-el="track">
                                       <ul class="glide__slides">
 
@@ -976,7 +976,7 @@ include "includes/apis.php";
 
                         </ul>
                                 </div>
-                                <!-- Controls -->
+                                                                <!-- Controls -->
                                 <div class="absolute left-0 items-center justify-between w-full h-0 px-4 top-1/2 hide-circle hidden md:flex"
                                     data-glide-el="controls">
                                     <button
