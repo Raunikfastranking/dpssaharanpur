@@ -1,8 +1,44 @@
 <?php
 include "includes/apis.php";
-// print_r($testimonial_data['data']['sections'][2]['resolved_content']['media']);
 
-$videoTestimonials = $testimonial_data['data']['sections'][2]['resolved_content']['media'] ?? [];
+// Collect playable video items from any CMS section (index can change when
+// sections are reordered in the CMS, so don't hardcode sections[N]).
+$videos = [];
+foreach (($testimonial_data['data']['sections'] ?? []) as $section) {
+    $media = $section['resolved_content']['media'] ?? [];
+    if (!is_array($media)) {
+        continue;
+    }
+    foreach ($media as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $videoUrl = $item['media_url'] ?? $item['page_link'] ?? $item['video_url'] ?? '';
+        $embedUrl = '';
+        if ($videoUrl !== '' && preg_match(
+            '/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([^&\?\/]+)/i',
+            $videoUrl,
+            $matches
+        )) {
+            $embedUrl = 'https://www.youtube.com/embed/' . $matches[1];
+        } elseif (
+            strpos($videoUrl, 'youtube.com') !== false
+            && preg_match('/[?&]list=([^&]+)/', $videoUrl, $listMatch)
+        ) {
+            $embedUrl = 'https://www.youtube.com/embed/videoseries?list=' . $listMatch[1];
+        }
+        $videoSrc = '';
+        if (!empty($item['media_file'])) {
+            $videoSrc = rtrim($api_url, '/') . '/' . ltrim($item['media_file'], '/');
+        } elseif ($embedUrl === '' && preg_match('/\.(mp4|webm|ogg|mov)(\?.*)?$/i', $videoUrl)) {
+            $videoSrc = $videoUrl;
+        }
+        if ($embedUrl === '' && $videoSrc === '') {
+            continue;
+        }
+        $videos[] = ['embed' => $embedUrl, 'src' => $videoSrc, 'caption' => $item['caption'] ?? ''];
+    }
+}
 ?>
 <html lang="en">
 
@@ -244,11 +280,11 @@ $videoTestimonials = $testimonial_data['data']['sections'][2]['resolved_content'
                                 <div class=" overflow-hidden mt-1" data-glide-el="track">
                                     <ul class="glide__slides">
                                         <?php
-                                        $testimonial_data =  $home_data['data']['sections'][10]['resolved_content']['items'] ?? [];
-                                          if (empty($testimonial_data)) {
-                                            echo "<p>No data available</p>";
+                                        $image_testimonials =  $home_data['data']['sections'][10]['resolved_content']['items'] ?? [];
+                                        if (empty($image_testimonials)) {
+                                            echo "<p class='text-center w-full py-6 text-gray-500'>No data available</p>";
                                         } else {
-                                        foreach ($testimonial_data as $data) {
+                                        foreach ($image_testimonials as $data) {
                                             ?>
                                             <li
                                                 class=" sm:flex items-start gap-2 mb-4 border-[1px] border-gray-300 p-3 rounded-[8px] bg-blue-main">
@@ -276,42 +312,38 @@ $videoTestimonials = $testimonial_data['data']['sections'][2]['resolved_content'
                             </div>
 
                             <div id="tab-2" class="tab-content Testimonials2">
-                                <div class=" overflow-hidden mt-1" data-glide-el="track">
-                                    <ul
-                                        class="mt-1 relative w-full overflow-hidden p-0 pb-5 whitespace-no-wrap flex gap-3 flex-no-wrap">
-
+                                <div class="overflow-hidden mt-1" data-glide-el="track">
+                                    <ul class="glide__slides mt-1 relative w-full overflow-hidden p-0 pb-5 whitespace-no-wrap flex gap-3 flex-no-wrap">
                                         <?php
-                        
-
-                                        if (empty($videoTestimonials)) {
-                                            echo "<p>No data available</p>";
+                                        if (empty($videos)) {
+                                            echo "<li class='text-center w-full py-8 text-gray-500'>No data available</li>";
                                         } else {
-                                            foreach ($videoTestimonials as $video) {
-                                                $videoUrl = $video["media_url"] ?? '';
-                                                $embedUrl = "";
-
-                                                if (strpos($videoUrl, 'youtube') !== false) {
-                                                    // Extract video ID
-                                                    preg_match('/(youtu\.be\/|v=)([^&]+)/', $videoUrl, $matches);
-                                                    $videoId = $matches[2] ?? '';
-
-                                                    if ($videoId) {
-                                                        $embedUrl = "https://www.youtube.com/embed/" . $videoId;
-                                                    }
-                                                }
+                                            foreach ($videos as $video) {
                                                 ?>
-                                                <li>
-                                                    <div class="w-full rounded-2xl shadow-lg sm:p-5 p-2">
-                                                        <iframe class="w-[100%] h-[300px]" src="<?php echo $embedUrl; ?>"
-                                                            allowfullscreen></iframe>
+                                                <li class="glide__slide">
+                                                    <div class="w-full rounded-2xl shadow-lg sm:p-5 p-2 bg-white border border-gray-200">
+                                                        <?php if (!empty($video['embed'])) { ?>
+                                                            <iframe class="w-[100%] h-[300px] rounded-xl"
+                                                                src="<?php echo htmlspecialchars($video['embed']); ?>"
+                                                                frameborder="0"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                                allowfullscreen></iframe>
+                                                        <?php } else { ?>
+                                                            <video class="w-[100%] h-[300px] rounded-xl object-cover" controls
+                                                                preload="metadata"
+                                                                src="<?php echo htmlspecialchars($video['src']); ?>"></video>
+                                                        <?php } ?>
+                                                        <?php if (!empty($video['caption'])): ?>
+                                                            <div class="mt-2 text-center text-sm font-semibold text-gray-700">
+                                                                <?= htmlspecialchars($video['caption']) ?>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </li>
                                             <?php
                                             }
                                         }
                                         ?>
-
-
                                     </ul>
                                 </div>
                             </div>
@@ -329,88 +361,84 @@ $videoTestimonials = $testimonial_data['data']['sections'][2]['resolved_content'
     <?php include "includes/foot.php" ?>
 
     <script>
- 
-        let glide1Initialized = false;
+        let glide1 = null;
+        let glide2 = null;
         let glide2Initialized = false;
 
-        function initGlide(selector, perViewCount) {
+        function initGlide(selector, perViewCount, glideType = 'carousel') {
+            const el = document.querySelector(selector);
+            if (!el) return null;
             return new Glide(selector, {
-                type: 'carousel',
-                focusAt: 1,
+                type: glideType,
+                focusAt: 0,
                 perView: perViewCount,
-                autoplay: 3500,
+                autoplay: glideType === 'carousel' ? 3500 : false,
                 animationDuration: 700,
-                gap: 10,
+                gap: 16,
                 breakpoints: {
                     1680: {
-                        perView: perViewCount >= 4 ? 3 : 2
+                        perView: perViewCount >= 4 ? 3 : 2,
+                        gap: 16
                     },
                     1024: {
-                        perView: perViewCount >= 4 ? 2 : 2
+                        perView: perViewCount >= 4 ? 2 : 2,
+                        gap: 16
                     },
                     820: {
-                        perView: 1
+                        perView: 1,
+                        gap: 12
                     },
                     640: {
-                        perView: 1
+                        perView: 1,
+                        gap: 12
                     }
                 }
             });
         }
 
-        
-        const glide1 = initGlide('.Testimonials', 2);
-        glide1.mount();
-        glide1Initialized = true;
+        glide1 = initGlide('.Testimonials', 2, 'carousel');
+        if (glide1) {
+            glide1.mount();
+        }
 
-        
         document.querySelectorAll('.tab-link').forEach(tab => {
             tab.addEventListener('click', function () {
                 const tabId = this.getAttribute('data-tab');
 
-               
                 document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('current'));
                 this.classList.add('current');
 
-               
                 document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('current'));
-                document.getElementById(tabId).classList.add('current');
-
-                
-                if (tabId === 'tab-2' && !glide2Initialized) {
-                    const glide2 = initGlide('.Testimonials2', 2);
-                    glide2.mount();
-                    glide2Initialized = true;
+                const activeTab = document.getElementById(tabId);
+                if (activeTab) {
+                    activeTab.classList.add('current');
                 }
-            });
-        });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const tabs = document.querySelectorAll(".tab-link");
-            const contents = document.querySelectorAll(".tab-content");
 
-            tabs.forEach(tab => {
-                tab.addEventListener("click", function () {
-                    const tabId = this.getAttribute("data-tab");
-
-                    
-                    tabs.forEach(t => t.classList.remove("current"));
-                    contents.forEach(c => c.classList.remove("current"));
-
-                   
-                    this.classList.add("current");
-                    document.getElementById(tabId).classList.add("current");
-
-                   
-                    if (tabId !== "tab-2") {
-                        const videos = document.querySelectorAll("#tab-2 video");
-                        videos.forEach(video => {
-                            video.pause();
-                            video.currentTime = 0;
-                        });
+                if (tabId === 'tab-2') {
+                    if (!glide2Initialized) {
+                        glide2 = initGlide('.Testimonials2', 2, 'slider');
+                        if (glide2) {
+                            glide2.mount();
+                            glide2Initialized = true;
+                        }
+                    } else if (glide2) {
+                        setTimeout(() => glide2.update(), 50);
                     }
-                });
+                } else {
+                    const iframes = document.querySelectorAll("#tab-2 iframe");
+                    iframes.forEach(iframe => {
+                        const src = iframe.getAttribute("src");
+                        if (src) iframe.setAttribute("src", src);
+                    });
+                    const videos = document.querySelectorAll("#tab-2 video");
+                    videos.forEach(video => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                    if (glide1) {
+                        setTimeout(() => glide1.update(), 50);
+                    }
+                }
             });
         });
     </script>
